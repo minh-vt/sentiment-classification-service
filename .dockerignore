@@ -1,0 +1,8 @@
+# Runtime build context is an allowlist, independent of Git tracking.
+**
+!Dockerfile
+!.dockerignore
+!pyproject.toml
+!uv.lock
+!src/
+!src/**

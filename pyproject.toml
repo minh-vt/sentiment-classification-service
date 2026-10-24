@@ -1,0 +1,45 @@
+[project]
+name = "sentiment-service"
+version = "0.1.0"
+description = "CPU sentiment inference service with ordered replay and measured baseline"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "prometheus-client>=0.20",
+    "safetensors>=0.4",
+    "torch>=2.9",
+    "transformers>=4.44",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "locust>=2.30",
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+sentiment-service = "sentiment_service.__main__:main"
+replay-traffic = "sentiment_service.replay:main"
+sentiment-pack = "sentiment_service.artifacts:main"
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

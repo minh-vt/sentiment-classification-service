@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+# Preserve original bytes for source traffic and measurement evidence.
+/replay_log.jsonl -text
+/results/** -text

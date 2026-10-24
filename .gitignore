@@ -1,0 +1,59 @@
+# Python environments, caches, and build output
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ty_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
+
+# Local configuration and credentials; keep the distributable template
+.env
+.env.*
+!/.env.example
+*.pem
+*.key
+
+# Local model weights/downloads; the public manifest belongs at repository root
+/artifacts/
+
+# AI workspace and tooling: never part of the handoff
+/.scratch/
+/.agents/
+/.pi/
+/.claude/
+/.codex/
+/.cursor/
+/skills-lock.json
+AGENTS.md
+CLAUDE.md
+
+# Existing AI working notes; new notes must live under .scratch/
+/GLOSSARY.md
+/docs/engineering-context.md
+/docs/research-model-serving.md
+/docs/research-traffic.md
+/docs/replay-analysis.md
+
+# Third-party inputs: keep local until redistribution permission is confirmed
+/replay_log.jsonl
+/Bai_danh_gia_MLOps_Junior_Phan_thuc_hanh.docx
+
+# Personal editor and OS state
+.idea/
+.vscode/
+.DS_Store
+
+# Office application lock files
+.~lock.*#
+~$*
+
+# Deliberately NOT ignored: uv.lock, README.md, DECISIONS.md,
+# model_manifest.json, tests, or results containing reviewed handoff evidence.
