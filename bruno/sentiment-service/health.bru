@@ -1,0 +1,22 @@
+meta {
+  name: Health
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+tests {
+  test("liveness answers 200 even before the model is loaded", function() {
+    expect(res.status).to.eql(200);
+    expect(res.body.status).to.eql("alive");
+  });
+}
+
+docs {
+  Liveness only. Use Ready to see whether the model has been verified and loaded.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Ready
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/ready
+  body: none
+  auth: none
+}
+
+tests {
+  test("readiness reports 200 and a model version", function() {
+    expect(res.status).to.eql(200);
+    expect(res.body.status).to.eql("ready");
+    expect(res.body.model_version).to.be.a("string");
+  });
+}
+
+docs {
+  503 with reason model_not_loaded means loading is still in progress.
+  503 with reason model_load_failed means the bundle was refused; the detail
+  field carries the manifest and actual SHA-256. The process stays alive on
+  purpose so this endpoint keeps answering.
+}

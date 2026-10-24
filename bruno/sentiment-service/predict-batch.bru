@@ -1,0 +1,27 @@
+meta {
+  name: Predict batch
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/predict
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": [
+      "the plot was dull and far too long",
+      "not bad at all, I would watch it again"
+    ]
+  }
+}
+
+tests {
+  test("predictions come back in input order, one per sentence", function() {
+    expect(res.status).to.eql(200);
+    expect(res.body.predictions).to.be.an("array").that.has.lengthOf(2);
+  });
+}

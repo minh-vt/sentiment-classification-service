@@ -1,0 +1,25 @@
+meta {
+  name: Reject blank text
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/predict
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": "   "
+  }
+}
+
+tests {
+  test("blank text is rejected as a client error", function() {
+    expect(res.status).to.eql(400);
+    expect(res.body.error.reason).to.eql("blank_text");
+    expect(res.body.error.index).to.eql(0);
+  });
+}

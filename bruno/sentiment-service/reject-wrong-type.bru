@@ -1,0 +1,33 @@
+meta {
+  name: Reject wrong type
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/predict
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": [ "valid sentence", 5 ]
+  }
+}
+
+vars:pre-request {
+  baseUrl: http://127.0.0.1:8000
+}
+
+tests {
+  test("one wrong item rejects the whole batch", function() {
+    expect(res.status).to.eql(400);
+    expect(res.body.error.reason).to.eql("wrong_type");
+    expect(res.body.error.index).to.eql(1);
+  });
+}
+
+docs {
+  Batch rejection is atomic: no partial predictions are returned.
+}
