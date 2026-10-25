@@ -1,0 +1,28 @@
+# Build: the Dockerfile pins the model revision; that is build identity, not a
+# runtime knob. Rebuild with --build-arg MODEL_REVISION=... to change the model.
+services:
+  service:
+    build:
+      context: .
+    image: sentiment-service:local
+    # Runtime policy; defaults match the image. Values come from the shell or the
+    # project .env that `docker compose` reads for interpolation.
+    environment:
+      - MAX_BATCH_SIZE=${MAX_BATCH_SIZE:-32}
+      - MAX_POSITIONS=${MAX_POSITIONS:-512}
+      - MAX_CONCURRENCY=${MAX_CONCURRENCY:-4}
+    # The container always listens on 8000; only the host port is configurable.
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      service:
+        condition: service_started
