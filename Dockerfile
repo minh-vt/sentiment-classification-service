@@ -20,25 +20,23 @@ COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable
 RUN .venv/bin/python -c "import sentiment_service.api"
 
-ARG MODEL_REVISION=714eb0fa89d2f80546fda750413ed43d93601a13
-# Downloading is `hf download`'s job; the packaging CLI only writes the manifest.
-RUN .venv/bin/hf download \
-        distilbert/distilbert-base-uncased-finetuned-sst-2-english \
-        config.json model.safetensors tokenizer_config.json vocab.txt \
-        --revision "${MODEL_REVISION}" \
-        --local-dir /app/models/sentiment
-# The bundle is the four runtime files plus its manifest, nothing else.
-RUN rm -rf /app/models/sentiment/.cache
-RUN .venv/bin/python -m sentiment_service.artifacts \
-        --revision "${MODEL_REVISION}" \
-        --destination /app/models/sentiment
+# Model identity comes from the delivered manifest, just as in `just model`.
+COPY model_manifest.json ./
+RUN MODEL_ID=$(.venv/bin/python -c "import json; print(json.load(open('model_manifest.json'))['model_name'])") \
+    && MODEL_REVISION=$(.venv/bin/python -c "import json; print(json.load(open('model_manifest.json'))['source_revision'])") \
+    && MODEL_FILES=$(.venv/bin/python -c "from sentiment_service.artifacts import PACK_FILES; print(*PACK_FILES)") \
+    && .venv/bin/hf download "$MODEL_ID" $MODEL_FILES \
+        --revision "$MODEL_REVISION" --local-dir /app/models/sentiment \
+    && rm -rf /app/models/sentiment/.cache \
+    && .venv/bin/python -m sentiment_service.artifacts \
+        --model-id "$MODEL_ID" --revision "$MODEL_REVISION" --destination /app/models/sentiment
 
 
 # Runtime stage: virtualenv, verified bundle and source only.
 FROM python:3.14-slim AS runtime
 
 # Runtime defaults. Every value here can be overridden at run time; none of them
-# decides which weights the image contains (that is MODEL_REVISION at build time).
+# decides which weights the image contains (that is model_manifest.json at build time).
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH=/app/.venv/bin:$PATH \

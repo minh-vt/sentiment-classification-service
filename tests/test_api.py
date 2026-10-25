@@ -18,16 +18,12 @@ from sentiment_service.settings import Settings
 class FakeModel:
     version = "fake-v1"
 
-    def __init__(self, labels=("NEGATIVE", "POSITIVE")):
-        self.labels = labels
-
     def predict(self, texts, max_positions=512):
-        # Mirrors the real seam: one encode, overlong sentences refused by index.
+        # Controlled error for the HTTP test, not a tokenizer simulation.
         for index, text in enumerate(texts):
-            positions = len(text.split()) + 2
-            if positions > max_positions:
-                raise OverlongInput(index, positions, max_positions)
-        return [{"label": self.labels[0], "score": 0.75} for _ in texts]
+            if text == "overlong":
+                raise OverlongInput(index, max_positions + 1, max_positions)
+        return [{"label": "NEGATIVE", "score": 0.75} for _ in texts]
 
 
 def wait_until(predicate, timeout=10.0):
@@ -50,19 +46,6 @@ def ready_client():
     with make_client(lambda: FakeModel()) as client:
         assert wait_until(lambda: client.get("/ready").status_code == 200)
         yield client
-
-
-@pytest.fixture
-def make_ready_client():
-    """Same, for tests that need their own predictor."""
-
-    def _make(load_model):
-        client = make_client(load_model)
-        client.__enter__()
-        assert wait_until(lambda: client.get("/ready").status_code == 200)
-        return client
-
-    return _make
 
 
 def test_health_answers_200_while_the_model_is_still_loading():
@@ -126,12 +109,13 @@ def test_one_sentence_returns_one_prediction(ready_client):
     assert response.json() == {"predictions": [{"label": "NEGATIVE", "score": 0.75}]}
 
 
-def test_batch_predictions_keep_the_input_order(make_ready_client):
+def test_batch_predictions_keep_the_input_order():
     class EchoModel(FakeModel):
         def predict(self, texts, max_positions=512):
             return [{"label": text.upper(), "score": 0.5} for text in texts]
 
-    with make_ready_client(EchoModel) as client:
+    with make_client(EchoModel) as client:
+        assert wait_until(lambda: client.get("/ready").status_code == 200)
         response = client.post("/predict", json={"text": ["second", "first"]})
         assert [p["label"] for p in response.json()["predictions"]] == ["SECOND", "FIRST"]
 
@@ -164,7 +148,7 @@ def test_invalid_utf8_body_is_rejected_as_a_client_error(ready_client):
         ({"text": "   "}, "blank_text", 0),
         ({"text": ["ok", "\t\n"]}, "blank_text", 1),
         ({"text": ["a"] * 33}, "batch_too_large", None),
-        ({"text": " ".join(["word"] * 600)}, "too_many_tokens", 0),
+        ({"text": "overlong"}, "too_many_tokens", 0),
     ],
 )
 def test_invalid_input_is_rejected_with_400_and_a_defined_reason(
@@ -208,7 +192,7 @@ def test_a_crashing_request_is_counted_as_a_server_error():
     assert 'sentiment_requests_total{endpoint="/predict",status="500"} 1.0' in body
 
 
-def test_health_keeps_answering_while_a_prediction_is_running(make_ready_client):
+def test_health_keeps_answering_while_a_prediction_is_running():
     entered = threading.Event()
     release = threading.Event()
     health_answered = threading.Event()
@@ -219,7 +203,8 @@ def test_health_keeps_answering_while_a_prediction_is_running(make_ready_client)
             assert release.wait(timeout=10)
             return super().predict(texts, max_positions)
 
-    with make_ready_client(SlowModel) as client:
+    with make_client(SlowModel) as client:
+        assert wait_until(lambda: client.get("/ready").status_code == 200)
 
         def health():
             client.get("/health")

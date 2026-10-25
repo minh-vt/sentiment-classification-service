@@ -1,10 +1,10 @@
-# Build: the Dockerfile pins the model revision; that is build identity, not a
-# runtime knob. Rebuild with --build-arg MODEL_REVISION=... to change the model.
+# The delivered manifest selects model identity at build time, not runtime.
+# SERVICE_IMAGE lets CI reuse the image that passed the standalone smoke.
 services:
   service:
     build:
       context: .
-    image: sentiment-service:local
+    image: ${SERVICE_IMAGE:-sentiment-service:local}
     # Runtime policy; defaults match the image. Values come from the shell or the
     # project .env that `docker compose` reads for interpolation.
     environment:

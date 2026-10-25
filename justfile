@@ -2,10 +2,8 @@
 # this file only gives them one vocabulary so local runs and CI cannot drift.
 set dotenv-load
 
-model_id := "distilbert/distilbert-base-uncased-finetuned-sst-2-english"
-model_files := "config.json model.safetensors tokenizer_config.json vocab.txt"
-# The delivered manifest is the single source of the pinned revision.
-revision := `uv run python -c "import json; print(json.load(open('model_manifest.json'))['source_revision'])"`
+model_dir := env('MODEL_DIR', 'artifacts/sentiment')
+service_image := env('SERVICE_IMAGE', 'sentiment-service:local')
 
 # List the recipes.
 default:
@@ -30,17 +28,22 @@ check:
     uv run ruff check
     uv run pytest
 
-# Download the bundle pinned by model_manifest.json. The only networked step.
+# Download the pinned bundle; setup and image builds may need the network too.
 model:
-    uv run hf download {{model_id}} {{model_files}} --revision {{revision}} \
-        --local-dir artifacts/sentiment
+    #!/bin/sh
+    set -eu
+    model_id=$(python3 -c "import json; print(json.load(open('model_manifest.json'))['model_name'])")
+    revision=$(python3 -c "import json; print(json.load(open('model_manifest.json'))['source_revision'])")
+    model_files=$(uv run python -c "from sentiment_service.artifacts import PACK_FILES; print(*PACK_FILES)")
+    uv run hf download "$model_id" $model_files \
+        --revision "$revision" --local-dir {{quote(model_dir)}}
     uv run python -m sentiment_service.artifacts \
-        --model-id {{model_id}} --revision {{revision}} --destination artifacts/sentiment
+        --model-id "$model_id" --revision "$revision" --destination {{quote(model_dir)}}
 
 # Serve the packaged bundle on the host. MODEL_DIR comes from .env or the shell,
 # falling back to the local bundle this repository builds.
 serve:
-    MODEL_DIR={{ env_var_or_default('MODEL_DIR', 'artifacts/sentiment') }} uv run python -m sentiment_service
+    MODEL_DIR={{quote(model_dir)}} uv run python -m sentiment_service
 
 # Replay the recorded log against a running service.
 replay url="http://127.0.0.1:8000" report="results/replay_report.json":
@@ -52,17 +55,21 @@ load users="1" duration="60s" out="results/load-local":
     uv run locust -f load/locustfile.py --headless -u {{users}} -r {{users}} -t {{duration}} \
         --host http://127.0.0.1:8000 --csv {{out}}/locust
 
-# Build the image with the pinned revision from the Dockerfile.
-build:
-    docker build -t sentiment-service:local .
+# Build once, then use this tag for standalone and Compose checks.
+build image=service_image *args:
+    docker build {{args}} -t {{quote(image)}} .
 
-# Check a running container over HTTP.
+# Stdlib only: no serving dependencies or uv required on the smoke runner.
 smoke url="http://127.0.0.1:8000":
-    uv run python scripts/smoke_container.py --base-url {{url}} --timeout 300
+    python3 scripts/smoke_container.py --base-url {{quote(url)}} --timeout 300
 
-# Service plus Prometheus.
-up:
-    docker compose up -d --build
+# Wait for an actual scrape, not just a started container.
+monitor url="http://127.0.0.1:9090":
+    python3 scripts/check_prometheus.py --base-url {{quote(url)}} --timeout 300
+
+# Rebuild by default; CI uses `just up --no-build` with its tested image.
+up *args="--build":
+    docker compose up -d {{args}}
 
 down:
     docker compose down -v

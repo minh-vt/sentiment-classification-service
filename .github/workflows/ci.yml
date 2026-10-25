@@ -19,44 +19,37 @@ jobs:
         with:
           version: "0.13.5"
       - uses: extractions/setup-just@v3
-      # Same entrypoint a developer runs, so CI cannot drift from it.
+        with:
+          just-version: "1.59.0"
       - run: just setup
       - run: just check
       - name: No formatting drift
         run: test -z "$(git status --porcelain)"
 
-  image:
+  integration:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      SERVICE_IMAGE: sentiment-service:ci
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: docker build -t sentiment-service:ci .
-      - run: docker run -d --name service -p 8000:8000 sentiment-service:ci
-      - run: python3 scripts/smoke_container.py --base-url http://127.0.0.1:8000 --timeout 300
+      - uses: extractions/setup-just@v3
+        with:
+          just-version: "1.59.0"
+      - run: just build "$SERVICE_IMAGE"
+      - run: docker run -d --name service -p 8000:8000 "$SERVICE_IMAGE"
+      - run: just smoke
+      - run: docker rm -f service
+      - run: just up --no-build
+      - run: just smoke
+      - run: just monitor
       - if: failure()
-        run: docker logs service
-      - if: always()
-        run: docker rm -f service
-
-  compose:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - run: docker compose up -d --build
-      - name: Prometheus must scrape the service
         run: |
-          for _ in $(seq 1 60); do
-            up=$(curl -s 'http://127.0.0.1:9090/api/v1/query?query=up%7Bjob%3D%22sentiment-service%22%7D' \
-              | python3 -c 'import json,sys; r=json.load(sys.stdin)["data"]["result"]; print(r[0]["value"][1] if r else "0")')
-            [ "$up" = "1" ] && echo "prometheus target up" && exit 0
-            sleep 5
-          done
+          docker logs service 2>&1 || true
           docker compose logs
-          exit 1
       - if: always()
-        run: docker compose down -v
+        run: |
+          docker rm -f service 2>/dev/null || true
+          just down

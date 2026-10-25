@@ -4,5 +4,6 @@
 !.dockerignore
 !pyproject.toml
 !uv.lock
+!model_manifest.json
 !src/
 !src/**

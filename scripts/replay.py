@@ -18,9 +18,6 @@ from pathlib import Path
 
 import httpx
 
-# Bounded outcome vocabulary; a refusal must stay attributable in the report.
-# The reasons themselves come from the response, never from a local copy.
-
 
 def percentile(values, p):
     """Nearest rank, no interpolation; empty input has no percentile."""
