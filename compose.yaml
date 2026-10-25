@@ -5,12 +5,8 @@ services:
     build:
       context: .
     image: ${SERVICE_IMAGE:-sentiment-service:local}
-    # Runtime policy; defaults match the image. Values come from the shell or the
-    # project .env that `docker compose` reads for interpolation.
-    environment:
-      - MAX_BATCH_SIZE=${MAX_BATCH_SIZE:-32}
-      - MAX_POSITIONS=${MAX_POSITIONS:-512}
-      - MAX_CONCURRENCY=${MAX_CONCURRENCY:-4}
+    # Runtime policy defaults come from Settings inside the image; override a
+    # value by adding an `environment:` entry here rather than copying defaults.
     # The container always listens on 8000; only the host port is configurable.
     ports:
       - "${HOST_PORT:-8000}:8000"

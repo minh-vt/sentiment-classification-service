@@ -35,17 +35,13 @@ RUN MODEL_ID=$(.venv/bin/python -c "import json; print(json.load(open('model_man
 # Runtime stage: virtualenv, verified bundle and source only.
 FROM python:3.14-slim AS runtime
 
-# Runtime defaults. Every value here can be overridden at run time; none of them
-# decides which weights the image contains (that is model_manifest.json at build time).
+# The image pins only what the container must know: where the bundle lives and
+# how to reach the app. Runtime policy defaults live in Settings, the single
+# source; override any of them with `-e` at run time.
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH=/app/.venv/bin:$PATH \
-    MODEL_DIR=/app/models/sentiment \
-    HOST=0.0.0.0 \
-    PORT=8000 \
-    MAX_BATCH_SIZE=32 \
-    MAX_POSITIONS=512 \
-    MAX_CONCURRENCY=4
+    MODEL_DIR=/app/models/sentiment
 
 WORKDIR /app
 

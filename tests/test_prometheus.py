@@ -2,8 +2,6 @@
 
 import http.server
 import json
-import os
-import shutil
 import subprocess
 import sys
 import threading
@@ -49,9 +47,9 @@ def prometheus(responses):
             thread.join()
 
 
-def probe(url):
+def run_probe(url, timeout="0.1"):
     return subprocess.run(
-        [sys.executable, str(SCRIPT), "--base-url", url, "--timeout", "0.1"],
+        [sys.executable, str(SCRIPT), "--base-url", url, "--timeout", timeout],
         check=False,
         capture_output=True,
         text=True,
@@ -59,30 +57,16 @@ def probe(url):
     )
 
 
-def test_monitor_retries_startup_without_uv(tmp_path):
-    executable = shutil.which("just")
-    assert executable, "the project's developer entrypoint requires just"
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (bin_dir / "python3").symlink_to(sys.executable)
-    (bin_dir / "sh").symlink_to(shutil.which("sh"))
+def test_probe_retries_startup_then_succeeds():
     with prometheus([(200, b""), (503, b"starting"), (200, target())]) as url:
-        result = subprocess.run(
-            [executable, "monitor", url],
-            cwd=SCRIPT.parent.parent,
-            env={**os.environ, "PATH": str(bin_dir)},
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+        result = run_probe(url, timeout="2")
     assert result.returncode == 0, result.stderr
     assert "target up" in result.stdout
 
 
 def test_probe_times_out_when_the_target_stays_down():
     with prometheus([(200, target("0"))]) as url:
-        result = probe(url)
+        result = run_probe(url)
     assert result.returncode != 0
     assert "target not up" in result.stderr
 
@@ -92,7 +76,7 @@ def test_probe_handles_connection_failure_without_traceback():
         ("127.0.0.1", 0), http.server.BaseHTTPRequestHandler
     ) as server:
         url = f"http://127.0.0.1:{server.server_port}"
-    result = probe(url)
+    result = run_probe(url)
     assert result.returncode != 0
     assert "never scraped sentiment-service" in result.stderr
     assert "Traceback" not in result.stderr

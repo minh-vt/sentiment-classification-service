@@ -59,7 +59,7 @@ def load_model(settings):
     model = SentimentModel(settings.model_dir, verify_bundle(settings.model_dir))
     if settings.max_positions > model.positions_limit:
         raise ValueError(
-            f"MAX_POSITIONS={settings.max_positions} exceeds the model limit "
-            f"of {model.positions_limit} positions"
+            f"configured position limit {settings.max_positions} exceeds "
+            f"the model limit of {model.positions_limit} positions"
         )
     return model

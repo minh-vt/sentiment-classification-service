@@ -1,15 +1,19 @@
-"""Runtime settings, read from the process environment at process start."""
+"""Runtime settings, read from the process environment at process start.
+
+Field definitions are the single source of both the environment key
+(``field.name.upper()``) and the default value, so there is no second copy to
+drift from the dataclass.
+"""
 
 import os
-from dataclasses import dataclass
+from dataclasses import MISSING, dataclass, fields
 from pathlib import Path
 
 
 @dataclass(frozen=True)
 class Settings:
-    # No default: the three places that know where a bundle lives (image, .env,
-    # developer shell) must say so, instead of inheriting a path that is wrong
-    # in the other two contexts.
+    # No default: the places that know where a bundle lives (image, .env,
+    # developer shell) must say so, instead of inheriting a wrong path.
     model_dir: Path
     host: str = "0.0.0.0"
     port: int = 8000
@@ -18,20 +22,22 @@ class Settings:
     max_concurrency: int = 4
 
     def __post_init__(self):
-        if self.max_batch_size < 1 or self.max_positions < 1 or self.max_concurrency < 1:
-            raise ValueError("MAX_BATCH_SIZE, MAX_POSITIONS and MAX_CONCURRENCY must be positive")
         if not 1 <= self.port <= 65535:
             raise ValueError("PORT must be between 1 and 65535")
+        for name in ("max_batch_size", "max_positions", "max_concurrency"):
+            if getattr(self, name) < 1:
+                raise ValueError(f"{name.upper()} must be positive")
 
     @classmethod
     def from_env(cls, env=os.environ):
-        if not env.get("MODEL_DIR"):
-            raise ValueError("MODEL_DIR is required: point it at a packaged model bundle")
-        return cls(
-            model_dir=Path(env["MODEL_DIR"]),
-            host=env.get("HOST", "0.0.0.0"),
-            port=int(env.get("PORT", "8000")),
-            max_batch_size=int(env.get("MAX_BATCH_SIZE", "32")),
-            max_positions=int(env.get("MAX_POSITIONS", "512")),
-            max_concurrency=int(env.get("MAX_CONCURRENCY", "4")),
-        )
+        values = {}
+        for field in fields(cls):
+            key = field.name.upper()
+            raw = env.get(key)
+            if field.default is MISSING:
+                if not raw:
+                    raise ValueError(f"{key} is required: point it at a packaged model bundle")
+                values[field.name] = Path(raw)
+            elif raw is not None:
+                values[field.name] = int(raw) if field.type is int else raw
+        return cls(**values)
