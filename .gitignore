@@ -55,5 +55,9 @@ CLAUDE.md
 .~lock.*#
 ~$*
 
+# Trial load runs written by `just load` default output; delivered evidence lives
+# in numbered results/load-* directories and is reviewed before tracking.
+/results/load-local/
+
 # Deliberately NOT ignored: uv.lock, README.md, DECISIONS.md,
 # model_manifest.json, tests, or results containing reviewed handoff evidence.

@@ -5,6 +5,7 @@ description = "CPU sentiment inference service with ordered replay and measured 
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.115",
+    "huggingface-hub>=2.3",
     "uvicorn>=0.30",
     "prometheus-client>=0.20",
     "safetensors>=0.4",
@@ -22,7 +23,6 @@ dev = [
 
 [project.scripts]
 sentiment-service = "sentiment_service.__main__:main"
-replay-traffic = "sentiment_service.replay:main"
 sentiment-pack = "sentiment_service.artifacts:main"
 
 [build-system]

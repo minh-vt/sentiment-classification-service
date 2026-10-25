@@ -4,6 +4,6 @@
   "source_revision": "714eb0fa89d2f80546fda750413ed43d93601a13",
   "weights_file": "model.safetensors",
   "weights_sha256": "7c3919835e442510166d267fe7cbe847e0c51cd26d9ba07b89a57b952b49b8aa",
-  "packaged_at": "2026-10-24T05:11:46Z",
+  "packaged_at": "2026-10-25T00:40:50Z",
   "version": "1.0.0+714eb0f"
 }
