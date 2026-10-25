@@ -1,0 +1,74 @@
+{
+  "source": {
+    "path": "replay_log.jsonl",
+    "sha256": "f8bef24d23d57aad8fd44891da447174e1b1b869005a26abdf48f729eed5c589",
+    "bytes": 800804,
+    "base_url": "http://127.0.0.1:8000"
+  },
+  "replay_mode": "timestamp order only; arrival gaps are not replayed",
+  "total_lines": 4575,
+  "readable_lines": 4565,
+  "unreadable_lines": 10,
+  "schema_invalid_lines": 0,
+  "sent_requests": 4565,
+  "successful_requests": 4385,
+  "rejected_by_reason": {
+    "blank_text": 120,
+    "too_many_tokens": 42,
+    "wrong_type": 18
+  },
+  "network_failures": 0,
+  "server_errors": 0,
+  "duplicate_ids": 80,
+  "extra_occurrences_by_id": 80,
+  "latency_ms": {
+    "p50": 14.077493000513641,
+    "p95": 19.75707100064028,
+    "sample_size": 4385
+  },
+  "failures": [],
+  "unreadable_lines_detail": [
+    {
+      "line": 118,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 106 (char 105)"
+    },
+    {
+      "line": 574,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 120 (char 119)"
+    },
+    {
+      "line": 1835,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 123 (char 122)"
+    },
+    {
+      "line": 2137,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 112 (char 111)"
+    },
+    {
+      "line": 2357,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 134 (char 133)"
+    },
+    {
+      "line": 2593,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 73 (char 72)"
+    },
+    {
+      "line": 3314,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 5876 (char 5875)"
+    },
+    {
+      "line": 4063,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 123 (char 122)"
+    },
+    {
+      "line": 4325,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 135 (char 134)"
+    },
+    {
+      "line": 4493,
+      "error": "invalid JSON: Expecting ',' delimiter: line 1 column 121 (char 120)"
+    }
+  ],
+  "schema_invalid_detail": [],
+  "reconciled": true
+}

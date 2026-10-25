@@ -1,0 +1,11 @@
+# Machine and workload for load-8
+measured_at_utc=2026-10-25T00:44:37Z
+kernel=Linux 7.2.9-2-cachyos x86_64
+cpu_model=12th Gen Intel(R) Core(TM) i5-1240P
+logical_cpus=16
+memory_gib=15.3
+service_runtime=container image sentiment-service:local id=0894d5a10e2a (network=host, MAX_CONCURRENCY=4, torch intra-op threads=12)
+image_size=1.56 GB (podman local build; podman drops HEALTHCHECK unless built with --format docker)
+load_tool=locust 2.47.0 (Python 3.14.8)
+workload=POST /predict, 60s, users=8, spawn rate=8, wait_time=0, one request in flight per user
+note=load generator and service share this machine, so they compete for CPU
